@@ -1,0 +1,26 @@
+id: ts-ignore-needs-reason
+snapshots:
+  ? |-
+    /* @ts-ignore */
+    baz();
+  : labels:
+    - source: /* @ts-ignore */
+      style: primary
+      start: 0
+      end: 16
+  ? |-
+    // @ts-expect-error
+    bar();
+  : labels:
+    - source: // @ts-expect-error
+      style: primary
+      start: 0
+      end: 19
+  ? |-
+    // @ts-ignore
+    foo();
+  : labels:
+    - source: // @ts-ignore
+      style: primary
+      start: 0
+      end: 13

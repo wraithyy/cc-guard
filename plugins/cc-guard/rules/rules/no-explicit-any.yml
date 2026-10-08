@@ -1,0 +1,7 @@
+id: no-explicit-any
+language: TypeScript
+severity: error
+message: "explicit `any`; add a justifying comment on the same or previous line, or use a real type"
+rule:
+  kind: predefined_type
+  regex: ^any$

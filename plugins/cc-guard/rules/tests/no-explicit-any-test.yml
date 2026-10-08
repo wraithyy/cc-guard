@@ -1,0 +1,10 @@
+id: no-explicit-any
+valid:
+  - "const a: unknown = 1;"
+  - "type T = { any: string }"
+  - "const any = 2;"
+invalid:
+  - "const a: any = 1;"
+  - "function f(p: any) {}"
+  - "let c = x as any;"
+  - "const d: Array<any> = [];"

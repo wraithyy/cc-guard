@@ -5,7 +5,7 @@
 set -u
 msgfile=$1
 chain() {
-  repo_hooks="$(git rev-parse --git-dir 2>/dev/null)/hooks" || return 0
+  repo_hooks="$(git rev-parse --git-common-dir 2>/dev/null)/hooks" || return 0
   self_dir=$(cd "$(dirname "$0")" && pwd)
   [ "$(cd "$repo_hooks" 2>/dev/null && pwd)" = "$self_dir" ] && return 0
   [ -x "$repo_hooks/commit-msg" ] && exec "$repo_hooks/commit-msg" "$@"
@@ -13,7 +13,7 @@ chain() {
 }
 # strip Claude attribution trailer (added by Claude Code, unwanted in history)
 tmp=$(mktemp)
-grep -v '^Co-Authored-By: Claude' "$msgfile" > "$tmp" || true
+grep -iv '^co-authored-by: claude' "$msgfile" > "$tmp" || true
 cat "$tmp" > "$msgfile"; rm -f "$tmp"
 
 if [ "$(git config --get cc-guard.commitFormat || echo true)" != "false" ]; then
@@ -22,12 +22,13 @@ if [ "$(git config --get cc-guard.commitFormat || echo true)" != "false" ]; then
     ""|"fixup! "*|"squash! "*|"Merge "*|"Revert \""*) ;;
     *)
       re=$(git config --get cc-guard.subjectRegex || echo '^(feat|fix|refactor|docs|test|chore|perf|ci|build|style|revert)(\([a-z0-9/._-]+\))?!?: .{1,72}$')
-      if ! printf '%s' "$subject" | grep -Eq "$re"; then
+      if ! printf '%s' "$subject" | grep -Eq -e "$re"; then
         echo "cc-guard: commit subject must match '$re'" >&2
         echo "  got: $subject" >&2
         exit 1
       fi
-      if ! grep -v '^#' "$msgfile" | perl -CSD -ne 'exit 1 if /[\x{1F000}-\x{1FAFF}\x{2600}-\x{27BF}\x{FE0F}]/'; then
+      # keep in sync with scripts/lib.sh EMOJI_RE
+      if ! grep -v '^#' "$msgfile" | perl -CSD -ne 'exit 1 if /[\x{1F000}-\x{1FAFF}\x{2B00}-\x{2BFF}\x{2300}-\x{23FF}\x{2600}-\x{2604}\x{260E}\x{2614}\x{2615}\x{2648}-\x{2653}\x{2660}-\x{2667}\x{267B}\x{26A0}-\x{26FF}\x{2700}-\x{2705}\x{2708}-\x{270D}\x{2728}\x{2733}\x{2734}\x{2744}\x{2747}\x{274C}\x{274E}\x{2753}-\x{2757}\x{2763}\x{2764}\x{2795}-\x{2797}\x{27A1}\x{27B0}\x{27BF}\x{FE0F}]/'; then
         echo "cc-guard: no emoji in commit messages" >&2
         exit 1
       fi ;;

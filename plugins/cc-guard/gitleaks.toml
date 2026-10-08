@@ -1,0 +1,6 @@
+# cc-guard pinned gitleaks config: default rules, no repo-local overrides.
+# A repo's own .gitleaks.toml is ignored on purpose (it could disable detection).
+# Per-finding ignores still work via .gitleaksignore or `# gitleaks:allow`.
+title = "cc-guard"
+[extend]
+useDefault = true

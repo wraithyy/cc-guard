@@ -3,7 +3,7 @@
 # Config: git config cc-guard.secrets false  -> skip the scan for this repo.
 set -u
 chain() {
-  repo_hooks="$(git rev-parse --git-dir 2>/dev/null)/hooks" || return 0
+  repo_hooks="$(git rev-parse --git-common-dir 2>/dev/null)/hooks" || return 0
   self_dir=$(cd "$(dirname "$0")" && pwd)
   [ "$(cd "$repo_hooks" 2>/dev/null && pwd)" = "$self_dir" ] && return 0
   [ -x "$repo_hooks/pre-commit" ] && exec "$repo_hooks/pre-commit" "$@"
@@ -14,12 +14,16 @@ if [ "$(git config --get cc-guard.secrets || echo true)" != "false" ]; then
     echo "cc-guard: gitleaks not installed, refusing to commit unscanned. brew install gitleaks, or: git config cc-guard.secrets false" >&2
     exit 1
   fi
-  if ! NO_COLOR=1 gitleaks git --staged --no-banner --no-color --redact -v >/tmp/cc-guard-gitleaks.$$ 2>&1; then
-    echo "cc-guard: gitleaks found secrets in staged changes:" >&2
-    grep -E '^(Finding|RuleID|File|Line):' /tmp/cc-guard-gitleaks.$$ >&2
-    rm -f /tmp/cc-guard-gitleaks.$$
+  # pinned default rules; a repo-local .gitleaks.toml is ignored on purpose
+  cfg=$(mktemp) || exit 1
+  printf '[extend]\nuseDefault = true\n' > "$cfg"
+  unset GITLEAKS_CONFIG GITLEAKS_CONFIG_TOML
+  out=$(NO_COLOR=1 gitleaks git --staged --no-banner --no-color --redact -v -c "$cfg" 2>&1); rc=$?
+  rm -f "$cfg"
+  if [ $rc -ne 0 ]; then
+    echo "cc-guard: gitleaks found secrets in staged changes (or failed, rc=$rc):" >&2
+    printf '%s\n' "$out" | grep -E '^(Finding|RuleID|File|Line):|^Error|level=error' | head -10 >&2
     exit 1
   fi
-  rm -f /tmp/cc-guard-gitleaks.$$
 fi
 chain "$@"

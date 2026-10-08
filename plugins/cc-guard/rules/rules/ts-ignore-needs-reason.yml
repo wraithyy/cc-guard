@@ -1,0 +1,7 @@
+id: ts-ignore-needs-reason
+language: TypeScript
+severity: error
+message: "@ts-ignore / @ts-expect-error without a reason; write why after the directive"
+rule:
+  kind: comment
+  regex: '@ts-(ignore|expect-error)\s*(\*/)?\s*$'

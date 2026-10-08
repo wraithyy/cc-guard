@@ -24,6 +24,12 @@ skipped() {
   return 1
 }
 
+# Pictographic emoji. Deliberately excludes text symbols such as check marks (U+2713),
+# arrows (U+2190-21FF), (TM)/(C), box drawing. Keep in sync with git-hooks/commit-msg.
+EMOJI_RE='[\x{1F000}-\x{1FAFF}\x{2B00}-\x{2BFF}\x{2300}-\x{23FF}\x{2600}-\x{2604}\x{260E}\x{2614}\x{2615}\x{2648}-\x{2653}\x{2660}-\x{2667}\x{267B}\x{26A0}-\x{26FF}\x{2700}-\x{2705}\x{2708}-\x{270D}\x{2728}\x{2733}\x{2734}\x{2744}\x{2747}\x{274C}\x{274E}\x{2753}-\x{2757}\x{2763}\x{2764}\x{2795}-\x{2797}\x{27A1}\x{27B0}\x{27BF}\x{FE0F}]'
+# has_emoji <file-or-stdin>: prints "line: text" of the first hit, empty when clean
+has_emoji() { perl -CSD -ne 'print "$.: $_" and exit if /'"$EMOJI_RE"'/' "$@" | cut -c1-120; }
+
 json_str() { jq -Rn --arg s "$1" '$s'; }
 
 # PreToolUse: refuse the call, reason shown to Claude.

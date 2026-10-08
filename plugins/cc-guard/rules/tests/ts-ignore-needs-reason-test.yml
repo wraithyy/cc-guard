@@ -1,0 +1,8 @@
+id: ts-ignore-needs-reason
+valid:
+  - "// @ts-expect-error legacy types\nfoo();"
+  - "// @ts-ignore: upstream bug #12\nbar();"
+invalid:
+  - "// @ts-ignore\nfoo();"
+  - "// @ts-expect-error\nbar();"
+  - "/* @ts-ignore */\nbaz();"
