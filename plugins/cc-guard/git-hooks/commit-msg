@@ -1,0 +1,36 @@
+#!/bin/sh
+# cc-guard commit-msg: conventional subject, no emoji, strip Claude co-author trailer, chain.
+# Config: git config cc-guard.commitFormat false   -> skip format/emoji checks
+#         git config cc-guard.subjectRegex '<ERE>' -> override subject pattern
+set -u
+msgfile=$1
+chain() {
+  repo_hooks="$(git rev-parse --git-dir 2>/dev/null)/hooks" || return 0
+  self_dir=$(cd "$(dirname "$0")" && pwd)
+  [ "$(cd "$repo_hooks" 2>/dev/null && pwd)" = "$self_dir" ] && return 0
+  [ -x "$repo_hooks/commit-msg" ] && exec "$repo_hooks/commit-msg" "$@"
+  return 0
+}
+# strip Claude attribution trailer (added by Claude Code, unwanted in history)
+tmp=$(mktemp)
+grep -v '^Co-Authored-By: Claude' "$msgfile" > "$tmp" || true
+cat "$tmp" > "$msgfile"; rm -f "$tmp"
+
+if [ "$(git config --get cc-guard.commitFormat || echo true)" != "false" ]; then
+  subject=$(grep -v '^#' "$msgfile" | grep -m1 -v '^[[:space:]]*$' || true)
+  case "$subject" in
+    ""|"fixup! "*|"squash! "*|"Merge "*|"Revert \""*) ;;
+    *)
+      re=$(git config --get cc-guard.subjectRegex || echo '^(feat|fix|refactor|docs|test|chore|perf|ci|build|style|revert)(\([a-z0-9/._-]+\))?!?: .{1,72}$')
+      if ! printf '%s' "$subject" | grep -Eq "$re"; then
+        echo "cc-guard: commit subject must match '$re'" >&2
+        echo "  got: $subject" >&2
+        exit 1
+      fi
+      if ! grep -v '^#' "$msgfile" | perl -CSD -ne 'exit 1 if /[\x{1F000}-\x{1FAFF}\x{2600}-\x{27BF}\x{FE0F}]/'; then
+        echo "cc-guard: no emoji in commit messages" >&2
+        exit 1
+      fi ;;
+  esac
+fi
+chain "$@"

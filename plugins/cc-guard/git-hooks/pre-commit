@@ -1,0 +1,25 @@
+#!/bin/sh
+# cc-guard pre-commit: gitleaks on the staged diff, then chain to the repo's own hook.
+# Config: git config cc-guard.secrets false  -> skip the scan for this repo.
+set -u
+chain() {
+  repo_hooks="$(git rev-parse --git-dir 2>/dev/null)/hooks" || return 0
+  self_dir=$(cd "$(dirname "$0")" && pwd)
+  [ "$(cd "$repo_hooks" 2>/dev/null && pwd)" = "$self_dir" ] && return 0
+  [ -x "$repo_hooks/pre-commit" ] && exec "$repo_hooks/pre-commit" "$@"
+  return 0
+}
+if [ "$(git config --get cc-guard.secrets || echo true)" != "false" ]; then
+  if ! command -v gitleaks >/dev/null 2>&1; then
+    echo "cc-guard: gitleaks not installed, refusing to commit unscanned. brew install gitleaks, or: git config cc-guard.secrets false" >&2
+    exit 1
+  fi
+  if ! NO_COLOR=1 gitleaks git --staged --no-banner --no-color --redact -v >/tmp/cc-guard-gitleaks.$$ 2>&1; then
+    echo "cc-guard: gitleaks found secrets in staged changes:" >&2
+    grep -E '^(Finding|RuleID|File|Line):' /tmp/cc-guard-gitleaks.$$ >&2
+    rm -f /tmp/cc-guard-gitleaks.$$
+    exit 1
+  fi
+  rm -f /tmp/cc-guard-gitleaks.$$
+fi
+chain "$@"

@@ -1,0 +1,17 @@
+{
+  "description": "cc-guard deterministic hooks",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/commit-guard.sh",
+            "timeout": 20
+          }
+        ]
+      }
+    ]
+  }
+}

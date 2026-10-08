@@ -1,0 +1,9 @@
+{
+  "name": "cc-guard",
+  "version": "0.1.0",
+  "description": "Deterministic guard hooks: gitleaks before commit, conventional commit format, no TS any without reason, no emoji in code, subagent evidence contract",
+  "author": { "name": "Josef Kvapil", "url": "https://github.com/wraithyy" },
+  "repository": "https://github.com/wraithyy/cc-guard",
+  "license": "MIT",
+  "keywords": ["hooks", "gitleaks", "lint", "guard"]
+}

@@ -1,0 +1,13 @@
+{
+  "name": "cc-guard",
+  "owner": { "name": "Josef Kvapil", "url": "https://github.com/wraithyy" },
+  "metadata": { "description": "Deterministic guard hooks for Claude Code: secrets, commit format, TS any, emoji, subagent evidence" },
+  "plugins": [
+    {
+      "name": "cc-guard",
+      "source": "./plugins/cc-guard",
+      "description": "Deterministic guard hooks for Claude Code",
+      "category": "productivity"
+    }
+  ]
+}
