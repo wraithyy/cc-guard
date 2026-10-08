@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 - 2026-10-08
+- post-edit: formatting is opt-in (`git config cc-guard.format true` / `CC_GUARD_FORMAT=1`) because it runs repo-local biome/prettier; only files inside the project are inspected, key-like paths skipped; `any` justification counts only comments after the match or a comment line above
+- agent_is_readonly: user agent file wins over a repo-supplied one, YAML-list `tools:` parsed, CRLF tolerated
+- hooks read stdin via a temp file (multi-MB tool responses no longer hit ARG_MAX)
+- emoji set narrowed further (keyboard glyphs, most arrows allowed; stars/hourglass still blocked)
+
 ## 0.3.0 - 2026-10-08
 - agent-evidence-pre: append VERIFICATION contract to command-capable subagent prompts (PreToolUse Agent, updatedInput)
 - agent-evidence-post: warn on reports without VERIFICATION or with unbacked success phrases (PostToolUse Agent)

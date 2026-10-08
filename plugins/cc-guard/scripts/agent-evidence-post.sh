@@ -10,7 +10,7 @@ skipped agent && exit 0
 type=$(field '.tool_input.subagent_type')
 agent_is_readonly "$type" && exit 0
 # tool_response may be a string, an array of content blocks, or an object: take all strings
-text=$(printf '%s' "$HOOK_INPUT" | jq -r '.tool_response | if type=="string" then . else [.. | strings] | join("\n") end')
+text=$(jq -r '.tool_response | if type=="string" then . else [.. | strings] | join("\n") end' "$HOOK_FILE")
 [ -z "$text" ] && exit 0
 warn=""
 if ! printf '%s' "$text" | grep -qi 'VERIFICATION'; then

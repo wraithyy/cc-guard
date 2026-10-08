@@ -4,16 +4,20 @@
 # Exit 2 is reserved for "stderr is the message" blocking (PostToolUse).
 
 read_input() {
-  HOOK_INPUT=$(cat)
+  HOOK_FILE=$(mktemp) || exit 0
+  trap 'rm -f "$HOOK_FILE"' EXIT
+  cat > "$HOOK_FILE"
+  HOOK_INPUT=$HOOK_FILE
   TOOL_NAME=$(field '.tool_name')
   CWD=$(field '.cwd')
   SESSION_ID=$(field '.session_id')
-  export HOOK_INPUT TOOL_NAME CWD SESSION_ID
+  export HOOK_FILE HOOK_INPUT TOOL_NAME CWD SESSION_ID
 }
 
-# field '.tool_input.command' -> raw string, empty when null
+# field '.tool_input.command' -> raw string, empty when null. Reads the temp file, so
+# multi-megabyte tool responses never hit ARG_MAX.
 field() {
-  printf '%s' "$HOOK_INPUT" | jq -r "$1 // empty"
+  jq -r "$1 // empty" "$HOOK_FILE"
 }
 
 has_cmd() { command -v "$1" >/dev/null 2>&1; }
@@ -24,11 +28,11 @@ skipped() {
   return 1
 }
 
-# Pictographic emoji. Deliberately excludes text symbols such as check marks (U+2713),
-# arrows (U+2190-21FF), (TM)/(C), box drawing. Keep in sync with git-hooks/commit-msg.
-EMOJI_RE='[\x{1F000}-\x{1FAFF}\x{2B00}-\x{2BFF}\x{2300}-\x{23FF}\x{2600}-\x{2604}\x{260E}\x{2614}\x{2615}\x{2648}-\x{2653}\x{2660}-\x{2667}\x{267B}\x{26A0}-\x{26FF}\x{2700}-\x{2705}\x{2708}-\x{270D}\x{2728}\x{2733}\x{2734}\x{2744}\x{2747}\x{274C}\x{274E}\x{2753}-\x{2757}\x{2763}\x{2764}\x{2795}-\x{2797}\x{27A1}\x{27B0}\x{27BF}\x{FE0F}]'
+# Pictographic emoji. Deliberately excludes text symbols: check marks (U+2713), arrows,
+# keyboard glyphs (U+2318 cmd, U+23CE return), (TM)/(C), box drawing. Keep in sync with git-hooks/commit-msg.
+EMOJI_RE='[\x{1F000}-\x{1FAFF}\x{2B50}\x{2B55}\x{231A}\x{231B}\x{23E9}-\x{23F3}\x{23F8}-\x{23FA}\x{2600}-\x{2604}\x{260E}\x{2614}\x{2615}\x{2648}-\x{2653}\x{2660}-\x{2667}\x{267B}\x{26A0}-\x{26FF}\x{2700}-\x{2705}\x{2708}-\x{270D}\x{2728}\x{2733}\x{2734}\x{2744}\x{2747}\x{274C}\x{274E}\x{2753}-\x{2757}\x{2763}\x{2764}\x{2795}-\x{2797}\x{27A1}\x{27B0}\x{27BF}\x{FE0F}]'
 # has_emoji <file-or-stdin>: prints "line: text" of the first hit, empty when clean
-has_emoji() { perl -CSD -ne 'print "$.: $_" and exit if /'"$EMOJI_RE"'/' "$@" | cut -c1-120; }
+has_emoji() { perl -CSD -ne 'print "$.: $_" and exit if /'"$EMOJI_RE"'/' "$@" 2>/dev/null | cut -c1-120; }
 
 json_str() { jq -Rn --arg s "$1" '$s'; }
 
@@ -57,15 +61,18 @@ out_warn() {
 # Bash/Edit/Write/MultiEdit/NotebookEdit = read-only. Missing `tools:` = full access.
 # Built-ins: Explore and Plan are read-only; general-purpose and unknown are not.
 agent_is_readonly() {
-  local t=$1 f fm
+  local t=$1 f fm found=0
   case "$t" in Explore|Plan|explorer) return 0 ;; general-purpose|"") return 1 ;; esac
   t=${t##*:}   # plugin-scoped name
-  for f in "${CLAUDE_PROJECT_DIR:-$PWD}/.claude/agents/$t.md" "$HOME/.claude/agents/$t.md"; do
+  # every definition found must be read-only; a repo-supplied file cannot relax the user's
+  for f in "$HOME/.claude/agents/$t.md" "${CLAUDE_PROJECT_DIR:-$PWD}/.claude/agents/$t.md"; do
     [ -f "$f" ] || continue
-    fm=$(awk 'NR==1 && $0!="---" {exit} NR>1 && $0=="---" {exit} NR>1 {print}' "$f")
+    found=1
+    fm=$(tr -d '\r' < "$f" | awk 'NR==1 && $0!="---" {exit} NR>1 && $0=="---" {exit} NR>1 {print}')
     printf '%s\n' "$fm" | grep -q '^tools:' || return 1
-    printf '%s\n' "$fm" | grep -E '^tools:' | grep -Eq '\b(Bash|Edit|Write|MultiEdit|NotebookEdit)\b' && return 1
-    return 0
+    # inline `tools: [..]` / `tools: A, B` or a YAML list on the following lines
+    printf '%s\n' "$fm" | awk '/^tools:/{p=1; print; next} p && /^[[:space:]]+-/ {print; next} {p=0}' \
+      | grep -Eq '\b(Bash|Edit|Write|MultiEdit|NotebookEdit)\b' && return 1
   done
-  return 1
+  [ $found -eq 1 ]
 }

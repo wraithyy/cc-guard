@@ -8,7 +8,7 @@ these hooks make the ones that matter fail for real.
 | Event | Script | Does |
 |---|---|---|
 | PreToolUse Bash (`git commit`) | `scripts/commit-guard.sh` | gitleaks on the staged diff (working tree + untracked with `-a` or a preceding `git add`), pinned default rules (a repo `.gitleaks.toml` is ignored), conventional subject `type(scope): desc` max 72 chars, no emoji, `--no-verify` refused. Denies the call with the reason. Unparseable commands (unbalanced quotes) fall through to the git `commit-msg` hook. |
-| PostToolUse Edit/Write/MultiEdit | `scripts/post-edit.sh` | formats with biome/prettier when the project has them, then **blocks** on TS `any` without a comment on the same or previous line, bare `@ts-ignore`/`@ts-expect-error`, emoji in code; **warns** on `console.log`, `TODO`/`FIXME`, `eslint-disable` without a reason, Czech text in files, shellcheck findings in `.sh`. |
+| PostToolUse Edit/Write/MultiEdit | `scripts/post-edit.sh` | formats with the project's biome/prettier when opted in (`git config cc-guard.format true`, runs repo-local code), then **blocks** on TS `any` without a comment on the same or previous line, bare `@ts-ignore`/`@ts-expect-error`, emoji in code; **warns** on `console.log`, `TODO`/`FIXME`, `eslint-disable` without a reason, Czech text in files, shellcheck findings in `.sh`. |
 | PreToolUse Agent | `scripts/agent-evidence-pre.sh` | for subagents that can run Bash or edit files, appends the VERIFICATION contract (`scripts/evidence-block.txt`) to the prompt via `updatedInput`. Read-only agents (Explore, Plan, agents whose `tools:` lack Bash/Edit/Write) are untouched. |
 | PostToolUse Agent | `scripts/agent-evidence-post.sh` | warns when such a report has no VERIFICATION block, or says "should work" / "all tests pass" without an exit code within 5 lines. |
 
@@ -36,7 +36,7 @@ Per repo or per directory via git config (`includeIf` friendly). Env `CC_GUARD_*
 | `cc-guard.subjectRegex` | conventional | ERE for the subject line, e.g. `^[A-Z]+-[0-9]+ ` for Jira keys |
 | `CC_GUARD_SKIP` | | comma list of hooks to disable: `commit`, `edit`, `agent` |
 | `CC_GUARD_LANG_WARN` | `1` | `0` silences the Czech-text warning; or put `lang: cs` in the file's front matter |
-| `CC_GUARD_NO_FORMAT` | `0` | `1` skips biome/prettier |
+| `cc-guard.format` / `CC_GUARD_FORMAT` | `false` | `true` runs the project's biome/prettier after each edit (repo-local code, so opt in per trusted dir via `includeIf`) |
 | `CC_GUARD_COMMIT_TYPES` | `feat\|fix\|...` | allowed types in the default regex |
 | `CC_GUARD_MAX_SUBJECT` | `72` | subject length limit |
 

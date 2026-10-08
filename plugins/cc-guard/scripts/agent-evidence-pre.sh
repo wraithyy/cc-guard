@@ -12,5 +12,5 @@ agent_is_readonly "$type" && exit 0
 prompt=$(field '.tool_input.prompt')
 printf '%s' "$prompt" | grep -qi 'VERIFICATION' && exit 0
 block=$(cat "$(dirname "$0")/evidence-block.txt")
-printf '%s' "$HOOK_INPUT" | jq -c --arg b "$block" \
-  '{hookSpecificOutput:{hookEventName:"PreToolUse",updatedInput:(.tool_input + {prompt:(.tool_input.prompt + $b)})}}'
+jq -c --arg b "$block" \
+  '{hookSpecificOutput:{hookEventName:"PreToolUse",updatedInput:(.tool_input + {prompt:(.tool_input.prompt + $b)})}}' "$HOOK_FILE"
