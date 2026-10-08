@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.0 - 2026-10-08
+- agent-evidence-pre: append VERIFICATION contract to command-capable subagent prompts (PreToolUse Agent, updatedInput)
+- agent-evidence-post: warn on reports without VERIFICATION or with unbacked success phrases (PostToolUse Agent)
+
 ## 0.2.0 - 2026-10-08
 - post-edit: format, block TS `any` w/o reason, bare ts-ignore, emoji; warn console.log, TODO, eslint-disable, Czech text, shellcheck (PostToolUse Edit|Write|MultiEdit)
 - ast-grep rules with test fixtures (rules/)

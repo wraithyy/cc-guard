@@ -1,0 +1,7 @@
+
+---
+VERIFICATION (mandatory): end your report with a VERIFICATION block listing the exact
+commands you ran, their exit codes, and the last 10 lines of raw output for each.
+Any claim without pasted output must be labelled UNVERIFIED. For dev-server or e2e
+checks, first prove the port belongs to this project (fetch a known route) before
+trusting results. Never summarise a check as "passed" without the output.

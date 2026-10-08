@@ -51,3 +51,21 @@ out_block() {
 out_warn() {
   jq -cn --arg e "$2" --arg c "$1" '{hookSpecificOutput:{hookEventName:$e,additionalContext:$c}}'
 }
+
+# agent_is_readonly <subagent_type>: 0 when the agent cannot run Bash or edit files.
+# Looks up the agent file (project, then user); frontmatter `tools:` without any of
+# Bash/Edit/Write/MultiEdit/NotebookEdit = read-only. Missing `tools:` = full access.
+# Built-ins: Explore and Plan are read-only; general-purpose and unknown are not.
+agent_is_readonly() {
+  local t=$1 f fm
+  case "$t" in Explore|Plan|explorer) return 0 ;; general-purpose|"") return 1 ;; esac
+  t=${t##*:}   # plugin-scoped name
+  for f in "${CLAUDE_PROJECT_DIR:-$PWD}/.claude/agents/$t.md" "$HOME/.claude/agents/$t.md"; do
+    [ -f "$f" ] || continue
+    fm=$(awk 'NR==1 && $0!="---" {exit} NR>1 && $0=="---" {exit} NR>1 {print}' "$f")
+    printf '%s\n' "$fm" | grep -q '^tools:' || return 1
+    printf '%s\n' "$fm" | grep -E '^tools:' | grep -Eq '\b(Bash|Edit|Write|MultiEdit|NotebookEdit)\b' && return 1
+    return 0
+  done
+  return 1
+}

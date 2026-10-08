@@ -9,6 +9,8 @@ these hooks make the ones that matter fail for real.
 |---|---|---|
 | PreToolUse Bash (`git commit`) | `scripts/commit-guard.sh` | gitleaks on the staged diff (working tree + untracked with `-a` or a preceding `git add`), pinned default rules (a repo `.gitleaks.toml` is ignored), conventional subject `type(scope): desc` max 72 chars, no emoji, `--no-verify` refused. Denies the call with the reason. Unparseable commands (unbalanced quotes) fall through to the git `commit-msg` hook. |
 | PostToolUse Edit/Write/MultiEdit | `scripts/post-edit.sh` | formats with biome/prettier when the project has them, then **blocks** on TS `any` without a comment on the same or previous line, bare `@ts-ignore`/`@ts-expect-error`, emoji in code; **warns** on `console.log`, `TODO`/`FIXME`, `eslint-disable` without a reason, Czech text in files, shellcheck findings in `.sh`. |
+| PreToolUse Agent | `scripts/agent-evidence-pre.sh` | for subagents that can run Bash or edit files, appends the VERIFICATION contract (`scripts/evidence-block.txt`) to the prompt via `updatedInput`. Read-only agents (Explore, Plan, agents whose `tools:` lack Bash/Edit/Write) are untouched. |
+| PostToolUse Agent | `scripts/agent-evidence-post.sh` | warns when such a report has no VERIFICATION block, or says "should work" / "all tests pass" without an exit code within 5 lines. |
 
 ast-grep rules live in `rules/` (`ast-grep test -c rules/sgconfig.yml`). Emoji means pictographic
 blocks only; check marks, arrows, (TM) and box drawing are allowed.
