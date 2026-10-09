@@ -51,10 +51,14 @@ missing.
 Optional git-level hooks, so commits made outside Claude get the same treatment:
 
 ```sh
-"$(claude plugin root cc-guard 2>/dev/null || echo ~/.claude/plugins/cache/cc-guard/cc-guard/*)"/scripts/install-git-hooks.sh --global
+git clone https://github.com/wraithyy/cc-guard ~/cc-guard
+~/cc-guard/plugins/cc-guard/scripts/install-git-hooks.sh --global
 ```
 
-(or copy `plugins/cc-guard/git-hooks/*` into your `core.hooksPath` directory).
+This copies `pre-commit` and `commit-msg` into `~/.config/git/hooks` and sets
+`core.hooksPath`. The installed plugin lives under
+`~/.claude/plugins/cache/cc-guard/cc-guard/<version>/` if you prefer to run the
+installer from there.
 
 ### For a project (teammates get it automatically)
 
